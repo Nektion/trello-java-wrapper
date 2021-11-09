@@ -1,6 +1,6 @@
 package com.julienvey.trello;
 
-public final class ListNotFoundException extends TrelloBadRequestException {
+public final class ListNotFoundException extends TrelloClientRequestException {
     private final String listId;
 
     public ListNotFoundException(String listId) {

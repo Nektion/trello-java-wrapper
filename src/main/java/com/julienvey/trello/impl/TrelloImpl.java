@@ -85,6 +85,7 @@ import com.julienvey.trello.ListNotFoundException;
 import com.julienvey.trello.NotFoundException;
 import com.julienvey.trello.Trello;
 import com.julienvey.trello.TrelloBadRequestException;
+import com.julienvey.trello.TrelloClientRequestException;
 import com.julienvey.trello.TrelloHttpClient;
 import com.julienvey.trello.domain.Action;
 import com.julienvey.trello.domain.AddMemberToBoardResult;
@@ -470,12 +471,12 @@ public class TrelloImpl implements Trello {
             Card put = put(createUrl(UPDATE_CARD).asString(), card, Card.class, card.getId());
             put.setInternalTrello(this);
             return put;
-        } catch (TrelloBadRequestException e) {
+        } catch (TrelloClientRequestException e) {
             throw decodeException(card, e);
         }
     }
 
-    private static TrelloBadRequestException decodeException(Card card, TrelloBadRequestException e) {
+    private static TrelloClientRequestException decodeException(Card card, TrelloClientRequestException e) {
         if (e.getMessage().contains("invalid value for idList")) {
             return new ListNotFoundException(card.getIdList());
         }
