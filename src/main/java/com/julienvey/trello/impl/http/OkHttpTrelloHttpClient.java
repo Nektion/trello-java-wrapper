@@ -4,7 +4,6 @@ import static com.julienvey.trello.impl.http.UrlExpander.expandUrl;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Objects;
@@ -15,8 +14,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.julienvey.trello.NotAuthorizedException;
 import com.julienvey.trello.NotFoundException;
 import com.julienvey.trello.TrelloBadRequestException;
+import com.julienvey.trello.TrelloClientRequestException;
 import com.julienvey.trello.TrelloHttpClient;
 import com.julienvey.trello.exception.TrelloHttpException;
+import com.julienvey.trello.exception.TrelloApiException;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -25,8 +26,6 @@ import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import okio.GzipSource;
-import okio.Okio;
 
 /**
  * The {@code TrelloHttpClient} backed by {@link OkHttpClient}.
@@ -34,6 +33,8 @@ import okio.Okio;
  * @author Edgar Asatryan
  */
 public class OkHttpTrelloHttpClient implements TrelloHttpClient {
+    private static final int TOO_MANY_REQUESTS = 429;
+    private static final int SUB_REQUEST_FAILED = 449;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final MediaType APPLICATION_JSON = MediaType.parse("application/json; charset=utf-8");
     private static final MediaType APPLICATION_OCTET_STREAM = MediaType.parse("application/octet-stream");
@@ -166,6 +167,14 @@ public class OkHttpTrelloHttpClient implements TrelloHttpClient {
         }
     }
 
+
+    /**
+     * Checks http response status codes
+     *
+     * @param response   HTTP response.
+     *
+     * More information about exceptions can be found at <a href="https://developer.atlassian.com/cloud/trello/guides/rest-api/status-codes/">here</a>.
+     */
     private void checkStatusCode(Response response) throws IOException {
         if (response.isSuccessful()) {
             return;
@@ -178,6 +187,22 @@ public class OkHttpTrelloHttpClient implements TrelloHttpClient {
                 throw new NotAuthorizedException();
             case HttpURLConnection.HTTP_NOT_FOUND:
                 throw new NotFoundException("Resource not found: " + response.request().url().uri());
+            case HttpURLConnection.HTTP_FORBIDDEN:
+                throw new TrelloClientRequestException("Forbidden");
+            case HttpURLConnection.HTTP_CONFLICT:
+                throw new TrelloClientRequestException("Conflict");
+            case TOO_MANY_REQUESTS:
+                throw new TrelloClientRequestException("Too Many Requests");
+            case SUB_REQUEST_FAILED:
+                throw new TrelloClientRequestException("Sub-Request Failed");
+            case HttpURLConnection.HTTP_INTERNAL_ERROR:
+                throw new TrelloApiException("Internal Server Error");
+            case HttpURLConnection.HTTP_UNAVAILABLE:
+                throw new TrelloApiException("Service Unavailable");
+            case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
+                throw new TrelloApiException("Gateway Timeout");
+            default:
+
         }
     }
 

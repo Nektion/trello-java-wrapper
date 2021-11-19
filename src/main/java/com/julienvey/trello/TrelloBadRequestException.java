@@ -1,6 +1,6 @@
 package com.julienvey.trello;
 
-public class TrelloBadRequestException extends RuntimeException {
+public class TrelloBadRequestException extends TrelloClientRequestException {
     public TrelloBadRequestException(String message, Throwable cause) {
         super(message, cause);
     }
